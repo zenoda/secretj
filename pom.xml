@@ -10,7 +10,7 @@
         <module>encrypt-admin</module>
         <module>decrypt-agent</module>
         <module>sample</module>
-        <module>encrypt-admin-plugin</module>
+        <module>encrypt-plugin</module>
     </modules>
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>

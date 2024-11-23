@@ -9,7 +9,7 @@
         <version>1.0.0</version>
     </parent>
 
-    <artifactId>encrypt-admin-plugin</artifactId>
+    <artifactId>encrypt-plugin</artifactId>
     <packaging>maven-plugin</packaging>
 
     <dependencies>
@@ -37,4 +37,17 @@
             <version>1.0.0</version>
         </dependency>
     </dependencies>
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-plugin-plugin</artifactId>
+                <version>3.13.1</version>
+                <configuration>
+                    <requiredJavaVersion>21</requiredJavaVersion>
+                    <goalPrefix>secretj-encrypt</goalPrefix>
+                </configuration>
+            </plugin>
+        </plugins>
+    </build>
 </project>

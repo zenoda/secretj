@@ -12,6 +12,7 @@
     <name>sample</name>
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+        <password>********</password>
     </properties>
     <dependencyManagement>
         <dependencies>
@@ -38,19 +39,6 @@
     </dependencies>
     <build>
         <plugins>
-            <!--            <plugin>-->
-            <!--                <groupId>org.apache.maven.plugins</groupId>-->
-            <!--                <artifactId>maven-jar-plugin</artifactId>-->
-            <!--                <version>${maven-jar-plugin.version}</version>-->
-            <!--                <configuration>-->
-            <!--                    <archive>-->
-            <!--                        <manifest>-->
-            <!--                            <addClasspath>true</addClasspath>-->
-            <!--                            <mainClass>org.zenoda.secretj.sample.App</mainClass>-->
-            <!--                        </manifest>-->
-            <!--                    </archive>-->
-            <!--                </configuration>-->
-            <!--            </plugin>-->
             <plugin>
                 <groupId>org.springframework.boot</groupId>
                 <artifactId>spring-boot-maven-plugin</artifactId>
@@ -70,7 +58,7 @@
             </plugin>
             <plugin>
                 <groupId>org.zenoda.secretj</groupId>
-                <artifactId>encrypt-admin-plugin</artifactId>
+                <artifactId>encrypt-plugin</artifactId>
                 <version>1.0.0</version>
                 <configuration>
                     <classes>
@@ -79,7 +67,7 @@
                     <jars>
                         <jar>sample-1.0.0.jar</jar>
                     </jars>
-                    <password>${pwd}</password>
+                    <password>${password}</password>
                 </configuration>
                 <executions>
                     <execution>
