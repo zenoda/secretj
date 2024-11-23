@@ -33,7 +33,7 @@ Secretj is a tool software used to encrypt compiled Java programs.
 ```shell
     java -javaagent:decrypt-agent/target/decrypt-agent-1.0.0.jar -jar sample/target/sample-1.0.0-encrypted.jar
 ```
-- decrypt-agent is used to decrypt classes at runtime. The compiled decrypt agent and its dependencies (all jar packages under decrypt agent/target) can be placed in any file directory, and the runtime uses the full or relative path after the Javaagent parameter.
+- decrypt-agent is used to decrypt classes at runtime. The compiled decrypt agent and its dependencies (all jar files under decrypt-agent/target) can be placed in any file directory, and the runtime uses the full or relative path after the Javaagent parameter.
 - Please enter the correct password according to the prompts at startup, and the program will run normally. If the password is incorrect, an error will be reported when loading the encrypted class. **Attention:** Due to different encryption classes, entering the wrong password may not necessarily cause the program to fail to start. Therefore, please verify whether the functions related to the encrypted classes are working properly.
 
 ## 4.2. Used as a Maven plugin
@@ -65,3 +65,4 @@ Secretj is a tool software used to encrypt compiled Java programs.
 <!-- .... -->
 ```
 - **Note:** If other packaging plugins (such as spring-boot-maven-plugin) are configured at the same time, please place this plugin after the other packaging plugins.
+- **Note:** Do not write the password into the pom.xml to avoid leakage. Please enter the password through the maven runtime environment variable (such as 'mvn -Dpassword=123456').
