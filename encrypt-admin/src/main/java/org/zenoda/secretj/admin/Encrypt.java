@@ -1,9 +1,9 @@
 package org.zenoda.secretj.admin;
 
-import javassist.ClassPool;
-import javassist.CtClass;
-import javassist.CtField;
-import javassist.CtMethod;
+import javassist.*;
+import javassist.bytecode.*;
+import javassist.compiler.CompileError;
+import javassist.compiler.Javac;
 import org.apache.commons.cli.*;
 
 import javax.crypto.Cipher;
@@ -23,6 +23,7 @@ import java.util.zip.CRC32;
 public class Encrypt {
     private static final Logger logger = Logger.getLogger(Encrypt.class.getName());
     private static final String ALGORITHM = "AES";
+    private static final ClassPool classPool = ClassPool.getDefault();
 
     public static void main(String[] args) {
         Options options = new Options();
@@ -45,21 +46,22 @@ public class Encrypt {
             String password = cmd.getOptionValue("password");
             String jars = cmd.getOptionValue("jars");
             String classes = cmd.getOptionValue("classes");
+            String[] inputJars = jars.split(":");
+            String[] classesToEncrypt = classes == null ? null : classes.split(":");
             try {
-                encrypt(jars, classes, password);
+                encrypt(inputJars, classesToEncrypt, password);
             } catch (Exception e) {
                 logger.severe(e.getMessage());
+                e.printStackTrace();
                 System.exit(1);
             }
         }
     }
 
-    private static void encrypt(String jars, String classes, String password) throws Exception {
+    public static void encrypt(String[] inputJars, String[] classesToEncrypt, String password) throws Exception {
         SecretKey secretKey = new SecretKeySpec(sha256(password), ALGORITHM);
         Cipher cipher = Cipher.getInstance(ALGORITHM);
         cipher.init(Cipher.ENCRYPT_MODE, secretKey);
-        String[] inputJars = jars.split(":");
-        String[] classesToEncrypt = classes == null ? null : classes.split(":");
         for (String inputJar : inputJars) {
             String outputJar = inputJar.substring(0, inputJar.lastIndexOf(".")) + "-encrypted.jar";
             JarInputStream jarInputStream = new JarInputStream(new FileInputStream(inputJar));
@@ -125,42 +127,53 @@ public class Encrypt {
     }
 
     private static byte[] makeMock(byte[] classBytes) throws Exception {
-        ClassPool pool = ClassPool.getDefault();
-        CtClass cc = pool.makeClass(new ByteArrayInputStream(classBytes));
-        if (cc.isInterface()) {
-            return classBytes;
-        }
-        CtMethod[] cms = cc.getDeclaredMethods();
-        for (CtMethod cm : cms) {
-            CtClass returnType = cm.getReturnType();
-            if (returnType.isPrimitive()) {
-                switch (returnType.getName()) {
-                    case "short":
-                    case "char":
-                    case "byte":
-                    case "int":
-                    case "long":
-                        cm.setBody("return 0;");
-                        break;
-                    case "double":
-                    case "float":
-                        cm.setBody("return 0.0;");
-                        break;
-                    case "boolean":
-                        cm.setBody("return false;");
-                        break;
-                    case "void":
-                        cm.setBody("return;");
-                        break;
-                }
-            } else {
-                cm.setBody("return null;");
-            }
+        CtClass cc = classPool.makeClassIfNew(new ByteArrayInputStream(classBytes));
+        if (cc.isFrozen()) {
+            return cc.toBytecode();
         }
         //Add a flag field.
-        CtField flagField = CtField.make("private static final java.lang.String __ZENODAENC__=\"HELLOWORLD\";", cc);
+        CtField flagField = CtField.make("private static final java.lang.String __ZENODAENC__=\"ENCRYPTED BY ZENODA\";", cc);
         cc.addField(flagField);
+        CtMethod[] cms = cc.getDeclaredMethods();
+        for (CtMethod cm : cms) {
+            MethodInfo methodInfo = cm.getMethodInfo();
+            try {
+                Bytecode b = new Bytecode(cc.getClassFile().getConstPool());
+                makeDefaultBody(b, cc);
+                methodInfo.setCodeAttribute(b.toCodeAttribute());
+                methodInfo.setAccessFlags(methodInfo.getAccessFlags() & ~AccessFlag.ABSTRACT);
+                methodInfo.rebuildStackMapIf6(cc.getClassPool(), cc.getClassFile());
+            } catch (BadBytecode e) {
+                throw new CannotCompileException(e);
+            }
+        }
+        cc.rebuildClassFile();
         return cc.toBytecode();
+    }
+
+    private static void makeDefaultBody(Bytecode b, CtClass type) {
+        int op;
+        int value;
+        if (type instanceof CtPrimitiveType) {
+            CtPrimitiveType pt = (CtPrimitiveType) type;
+            op = pt.getReturnOp();
+            if (op == Opcode.DRETURN)
+                value = Opcode.DCONST_0;
+            else if (op == Opcode.FRETURN)
+                value = Opcode.FCONST_0;
+            else if (op == Opcode.LRETURN)
+                value = Opcode.LCONST_0;
+            else if (op == Opcode.RETURN)
+                value = Opcode.NOP;
+            else
+                value = Opcode.ICONST_0;
+        } else {
+            op = Opcode.ARETURN;
+            value = Opcode.ACONST_NULL;
+        }
+        if (value != Opcode.NOP)
+            b.addOpcode(value);
+        b.addOpcode(op);
     }
 
     private static byte[] sha256(String input) {
