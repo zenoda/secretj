@@ -8,7 +8,7 @@ Secretj is a tool software used to encrypt compiled Java programs.
 - Support spring boot fat jar
 - Enter password at startup
 
-# 3.  Building
+# 3.  Build
 ## 3.1.  Pull source code
 ```shell
   git clone https://github.com/zenoda/secretj.git
