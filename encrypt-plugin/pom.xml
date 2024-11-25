@@ -44,7 +44,7 @@
                 <artifactId>maven-plugin-plugin</artifactId>
                 <version>3.13.1</version>
                 <configuration>
-                    <requiredJavaVersion>21</requiredJavaVersion>
+                    <requiredJavaVersion>[11,)</requiredJavaVersion>
                     <goalPrefix>secretj-encrypt</goalPrefix>
                 </configuration>
             </plugin>
