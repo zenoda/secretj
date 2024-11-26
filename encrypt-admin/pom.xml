@@ -4,7 +4,7 @@
     <parent>
         <groupId>org.zenoda.secretj</groupId>
         <artifactId>secretj-parent</artifactId>
-        <version>1.0.0</version>
+        <version>${revision}</version>
     </parent>
 
     <artifactId>encrypt-admin</artifactId>
@@ -32,6 +32,14 @@
             <groupId>org.javassist</groupId>
             <artifactId>javassist</artifactId>
         </dependency>
+        <dependency>
+            <groupId>org.slf4j</groupId>
+            <artifactId>slf4j-api</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>ch.qos.logback</groupId>
+            <artifactId>logback-classic</artifactId>
+        </dependency>
     </dependencies>
     <build>
         <plugins>
@@ -43,7 +51,7 @@
                     <archive>
                         <manifest>
                             <addClasspath>true</addClasspath>
-                            <mainClass>org.zenoda.secretj.admin.Encrypt</mainClass>
+                            <mainClass>org.zenoda.secretj.admin.EncryptCmd</mainClass>
                         </manifest>
                     </archive>
                 </configuration>

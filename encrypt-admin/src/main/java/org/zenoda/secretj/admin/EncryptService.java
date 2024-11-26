@@ -2,9 +2,8 @@ package org.zenoda.secretj.admin;
 
 import javassist.*;
 import javassist.bytecode.*;
-import javassist.compiler.CompileError;
-import javassist.compiler.Javac;
-import org.apache.commons.cli.*;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import javax.crypto.Cipher;
 import javax.crypto.SecretKey;
@@ -17,68 +16,34 @@ import java.util.jar.JarEntry;
 import java.util.jar.JarInputStream;
 import java.util.jar.JarOutputStream;
 import java.util.jar.Manifest;
-import java.util.logging.Logger;
 import java.util.zip.CRC32;
 
-public class Encrypt {
-    private static final Logger logger = Logger.getLogger(Encrypt.class.getName());
+public class EncryptService {
+    private static final Logger logger = LoggerFactory.getLogger(EncryptService.class);
     private static final String ALGORITHM = "AES";
     private static final ClassPool classPool = ClassPool.getDefault();
 
-    public static void main(String[] args) {
-        Options options = new Options();
-        options.addOption("h", "help", false, "print this message");
-        options.addOption("p", "password", true, "password");
-        options.addOption("j", "jars", true, "jars for encryption");
-        options.addOption("c", "classes", true, "classes for encryption");
-        CommandLineParser parser = new DefaultParser();
-        HelpFormatter formatter = new HelpFormatter();
-        CommandLine cmd = null;
-        try {
-            cmd = parser.parse(options, args);
-        } catch (ParseException e) {
-            logger.severe(e.getMessage());
-            System.exit(1);
-        }
-        if (cmd.hasOption("help")) {
-            formatter.printHelp("encrypt-admin", options);
-        } else {
-            String password = cmd.getOptionValue("password");
-            String jars = cmd.getOptionValue("jars");
-            String classes = cmd.getOptionValue("classes");
-            String[] inputJars = jars.split(":");
-            String[] classesToEncrypt = classes == null ? null : classes.split(":");
-            try {
-                encrypt(inputJars, classesToEncrypt, password);
-            } catch (Exception e) {
-                logger.severe(e.getMessage());
-                e.printStackTrace();
-                System.exit(1);
-            }
-        }
-    }
-
-    public static void encrypt(String[] inputJars, String[] classesToEncrypt, String password) throws Exception {
+    public void encrypt(String[] jars, String[] classes, String password) throws Exception {
         SecretKey secretKey = new SecretKeySpec(sha256(password), ALGORITHM);
         Cipher cipher = Cipher.getInstance(ALGORITHM);
         cipher.init(Cipher.ENCRYPT_MODE, secretKey);
-        for (String inputJar : inputJars) {
-            String outputJar = inputJar.substring(0, inputJar.lastIndexOf(".")) + "-encrypted.jar";
-            JarInputStream jarInputStream = new JarInputStream(new FileInputStream(inputJar));
+        for (String jar : jars) {
+            String outputJar = jar.substring(0, jar.lastIndexOf(".")) + "-encrypted.jar";
+            JarInputStream jarInputStream = new JarInputStream(new FileInputStream(jar));
             Manifest manifest = jarInputStream.getManifest();
             JarOutputStream jarOutputStream = manifest == null ? new JarOutputStream(new FileOutputStream(outputJar)) : new JarOutputStream(new FileOutputStream(outputJar), manifest);
             try (jarInputStream; jarOutputStream) {
-                encryptStream(classesToEncrypt, jarInputStream, jarOutputStream, cipher);
+                encryptStream(classes, jarInputStream, jarOutputStream, cipher);
             }
         }
     }
 
-    private static void encryptStream(String[] classes, JarInputStream jarInputStream, JarOutputStream jarOutputStream, Cipher cipher) throws Exception {
+    private void encryptStream(String[] classes, JarInputStream jarInputStream, JarOutputStream jarOutputStream, Cipher cipher) throws Exception {
         for (JarEntry entry = jarInputStream.getNextJarEntry(); entry != null; entry = jarInputStream.getNextJarEntry()) {
             if (entry.getName().endsWith(".class") && isClassToEncrypt(entry.getName(), classes)) {
-                logger.info("encrypt class: " + entry.getName());
+                logger.info("encrypt class: {}", entry.getName());
                 byte[] classBytes = jarInputStream.readAllBytes();
-                byte[] mockBytes = makeMock(classBytes);
+                byte[] mockBytes = makeClassMock(classBytes);
                 JarEntry newEntry = createNewEntry(entry.getName(), entry, mockBytes);
                 jarOutputStream.putNextEntry(newEntry);
                 jarOutputStream.write(mockBytes);
@@ -112,7 +77,7 @@ public class Encrypt {
         }
     }
 
-    private static JarEntry createNewEntry(String name, JarEntry entry, byte[] data) {
+    private JarEntry createNewEntry(String name, JarEntry entry, byte[] data) {
         int method = entry.getMethod();
         JarEntry newEntry = new JarEntry(name);
         newEntry.setMethod(method);
@@ -126,7 +91,7 @@ public class Encrypt {
         return newEntry;
     }
 
-    private static byte[] makeMock(byte[] classBytes) throws Exception {
+    private byte[] makeClassMock(byte[] classBytes) throws Exception {
         CtClass cc = classPool.makeClassIfNew(new ByteArrayInputStream(classBytes));
         if (cc.isFrozen()) {
             return cc.toBytecode();
@@ -151,11 +116,10 @@ public class Encrypt {
         return cc.toBytecode();
     }
 
-    private static void makeDefaultBody(Bytecode b, CtClass type) {
+    private void makeDefaultBody(Bytecode b, CtClass type) {
         int op;
         int value;
-        if (type instanceof CtPrimitiveType) {
-            CtPrimitiveType pt = (CtPrimitiveType) type;
+        if (type instanceof CtPrimitiveType pt) {
             op = pt.getReturnOp();
             if (op == Opcode.DRETURN)
                 value = Opcode.DCONST_0;
@@ -176,7 +140,7 @@ public class Encrypt {
         b.addOpcode(op);
     }
 
-    private static byte[] sha256(String input) {
+    private byte[] sha256(String input) {
         try {
             // 获取SHA-256 MessageDigest实例
             MessageDigest digest = MessageDigest.getInstance("SHA-256");
@@ -187,7 +151,7 @@ public class Encrypt {
         }
     }
 
-    private static boolean isClassToEncrypt(String entryName, String[] classesToEncrypt) {
+    private boolean isClassToEncrypt(String entryName, String[] classesToEncrypt) {
         if (classesToEncrypt == null) {
             return true;
         }
@@ -200,15 +164,7 @@ public class Encrypt {
         return false;
     }
 
-    private static byte[] encryptClassBytes(byte[] classBytes, Cipher cipher) throws Exception {
+    private byte[] encryptClassBytes(byte[] classBytes, Cipher cipher) throws Exception {
         return cipher.doFinal(classBytes);
-    }
-
-    private static void copyInputStream(InputStream inputStream, OutputStream outputStream) throws IOException {
-        byte[] buffer = new byte[1024];
-        int length;
-        while ((length = inputStream.read(buffer)) != -1) {
-            outputStream.write(buffer, 0, length);
-        }
     }
 }

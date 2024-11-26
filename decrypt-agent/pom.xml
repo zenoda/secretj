@@ -4,7 +4,7 @@
     <parent>
         <groupId>org.zenoda.secretj</groupId>
         <artifactId>secretj-parent</artifactId>
-        <version>1.0.0</version>
+        <version>${revision}</version>
     </parent>
 
     <artifactId>decrypt-agent</artifactId>
