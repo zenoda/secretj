@@ -24,8 +24,8 @@ Secretj 是一个用于对编译后的java程序进行加密的工具软件。
 ```shell
     java -jar encrypt-admin/target/encrypt-admin-1.0.0.jar -j sample/target/sample-1.0.0.jar -c org.zenoda.secretj.sample.HelloController -p 12345678
 ```
-- 参数 -j(或--jars) 指定要进行加密的jar包文件路径，可以是相对路径或绝对路径，多个jar包用冒号（:）分隔。
-- 参数 -c(或--classes) 指定要进行加密的class文件，支持模糊匹配，多个class用冒号（:）分隔。
+- 参数 -j(或--jars) 指定要进行加密的jar包文件路径，可以是相对路径或绝对路径，多个jar包用逗号（,）分隔。
+- 参数 -c(或--classes) 指定要进行加密的class文件，支持模糊匹配，多个class用逗号（,）分隔。
 - 参数 -p(或--password) 指定加密和解密使用的密码，密码强度暂未控制，可自行掌握。
 - 命令执行成功后，会在原始jar文件所在目录生成加密后的jar文件，文件名中添加-encrypted标识。
 
