@@ -24,8 +24,8 @@ Secretj is a tool software used to encrypt compiled Java programs.
 ```shell
     java -jar encrypt-admin/target/encrypt-admin-1.0.0.jar -j sample/target/sample-1.0.0.jar -c org.zenoda.secretj.sample.HelloController -p 12345678
 ```
-- The parameter -j (or --jars) specifies the path of the jar package file to be encrypted, which can be a relative path or an absolute path. Multiple jar packages are separated by colons (:).
-- The parameter -c (or --classes) specifies the class file to be encrypted, supports fuzzy matching, and separates multiple classes with colons (:).
+- The parameter -j (or --jars) specifies the path of the jar package file to be encrypted, which can be a relative path or an absolute path. Multiple jar packages are separated by commas (,).
+- The parameter -c (or --classes) specifies the class file to be encrypted, supports fuzzy matching, and separates multiple classes with commas (,).
 - The parameter -p (or --password) specifies the password used for encryption and decryption. The strength of the password is not yet controlled and can be controlled by oneself.
 - After the command is executed successfully, an encrypted jar file will be generated in the directory where the original jar file is located, with the - encrypted identifier added to the file name.
 
